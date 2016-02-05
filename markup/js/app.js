@@ -36,8 +36,8 @@ function loadPage(url, elem, initTemplateFunction) {
 
 
 //Set background, timer text to show and 1second interval
-function setTimer(poses, containerEl, timerEl, startTime) {
-    containerEl.style.backgroundImage = "url('images/" + poses[poseIndex].image + "')";
+function setTimer(poses, container, timerEl, startTime) {
+    container.style.backgroundImage = "url('images/" + poses[poseIndex].image + "')";
     timerEl.innerText = poses[poseIndex].timer - startTime;
 
     var i = startTime;
@@ -49,7 +49,7 @@ function setTimer(poses, containerEl, timerEl, startTime) {
             clearInterval(intervalId);
             poseIndex++;
             if (poseIndex<poses.length) {
-                setTimer(poses, containerEl, timerEl, 0);
+                setTimer(poses, container, timerEl, 0);
             } else {
                 loadPage('templates/done.html', containerEl, function(){});
             };
@@ -70,8 +70,9 @@ function initHomeTemplate(){
 function initWorkoutTemplate(){
     var pauseButton = document.getElementById('pause');
     var skipButton = document.getElementById('skip');
+    var workoutEl = document.getElementById('workout');
     timerEl = document.getElementById('timer');
-    setTimer(poses, containerEl, timerEl, 0);
+    setTimer(poses, workoutEl, timerEl, 0);
 
     //Pause button handling
     pauseButton.addEventListener("click", function(){
@@ -79,7 +80,7 @@ function initWorkoutTemplate(){
         if (paused) {
             clearInterval(intervalId);
         } else if (poseIndex<poses.length) {
-            setTimer(poses, containerEl, timerEl, poses[poseIndex].timer - timerEl.innerText);
+            setTimer(poses, workoutEl, timerEl, poses[poseIndex].timer - timerEl.innerText);
         };
     });
 
@@ -88,7 +89,7 @@ function initWorkoutTemplate(){
         clearInterval(intervalId);
         poseIndex++;
         if (poseIndex<poses.length) {
-            setTimer(poses, containerEl, timerEl, 0);
+            setTimer(poses, workoutEl, timerEl, 0);
         } else {
             timerEl.innerText = 0;
             loadPage('templates/done.html', containerEl, function(){});
