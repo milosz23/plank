@@ -1,98 +1,108 @@
-//Initialization--------------------------------------------------
-var poses = [
-    {
-        name:'basic',
-        image:'basic.jpg',
-        timer: 3
-    },
-    {
-        name:'shoulder',
-        image:'shoulder.jpg',
-        timer: 5
-    },
-];
-var containerEl = document.getElementById('container');
+myApp = {
+    poses: [
+        {
+            name:'basic',
+            image:'basic.jpg',
+            timer: 3
+        },
+        {
+            name:'shoulder',
+            image:'shoulder.jpg',
+            timer: 5
+        },
+    ],
+    appContainer: document.getElementById('container'),
+    intervalId: 0,
+    poseIndex: 0,
+    paused: false,
+    timerContainer: '#timer element init',
 
-var intervalId = 0;
-var poseIndex = 0;
-var paused = false;
-var timerEl = '#timer element init';
+    //Render template to elem
+    loadPage: function(url, elem, func, funcContext) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (xhttp.readyState == 4 && xhttp.status == 200) {
+                elem.innerHTML = xhttp.responseText;
+                func.call(funcContext);
+            }
+        };
+        xhttp.open("GET", url, true);
+        xhttp.send();
+    }
+};
 
-loadPage('templates/home.html', containerEl, initHomeTemplate);
+var homeScreen = {
+    startButton: '',
+    //Init logic for home template
+    initHomeTemplate: function(){
+        this.startButton = document.getElementById('startButton');
+        this.startButton.addEventListener("click", function(){
+            myApp.loadPage('templates/workout.html', myApp.appContainer, 
+                workoutScreen.initWorkoutTemplate, workoutScreen);
+        });
+    }
+};
 
+var workoutScreen = {
+    workoutContainer: '#workout element init',
+    pauseButton: '#pause element init',
+    skipButton: '#skip element init',
+    //Set background, timer text to show and 1second interval
+    setTimer: function (poses, startTime) {
+        var self = this;//set for using in setinterval
+        self.workoutContainer.style.backgroundImage = "url('images/" + myApp.poses[myApp.poseIndex].image + "')";
+        myApp.timerContainer.innerText = myApp.poses[myApp.poseIndex].timer - startTime;
 
-//Render template to elem
-function loadPage(url, elem, initTemplateFunction) {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-        if (xhttp.readyState == 4 && xhttp.status == 200) {
-            elem.innerHTML = xhttp.responseText;
-            initTemplateFunction();
-        }
-    };
-    xhttp.open("GET", url, true);
-    xhttp.send();
-}
+        var i = startTime;
+        myApp.intervalId = setInterval(function(){
+            i++;
+            myApp.timerContainer.innerText = myApp.poses[myApp.poseIndex].timer - i;
 
-
-//Set background, timer text to show and 1second interval
-function setTimer(poses, container, timerEl, startTime) {
-    container.style.backgroundImage = "url('images/" + poses[poseIndex].image + "')";
-    timerEl.innerText = poses[poseIndex].timer - startTime;
-
-    var i = startTime;
-    intervalId = setInterval(function(){
-        i++;
-        timerEl.innerText = poses[poseIndex].timer - i;
-
-        if (i==poses[poseIndex].timer) {
-            clearInterval(intervalId);
-            poseIndex++;
-            if (poseIndex<poses.length) {
-                setTimer(poses, container, timerEl, 0);
-            } else {
-                loadPage('templates/done.html', containerEl, function(){});
+            if (i==myApp.poses[myApp.poseIndex].timer) {
+                clearInterval(myApp.intervalId);
+                myApp.poseIndex++;
+                if (myApp.poseIndex<myApp.poses.length) {
+                    self.setTimer(myApp.poses, container, 0);
+                } else {
+                    myApp.loadPage('templates/done.html', myApp.appContainer, function(){});
+                };
             };
-        };
-    }, 1000);
-}
+        }, 1000);
+    },
+    //Init logic for workout template
+    initWorkoutTemplate: function(){
+        var self = this;//set for using in addeventlistener
+        self.pauseButton = document.getElementById('pause');
+        self.skipButton = document.getElementById('skip');
+        self.workoutContainer = document.getElementById('workout');
+        myApp.timerContainer = document.getElementById('timer');
+        self.setTimer(myApp.poses, 0);
+
+        //Pause button handling
+        self.pauseButton.addEventListener("click", function(){
+            console.log('pause');
+            myApp.paused = !myApp.paused;
+            if (myApp.paused) {
+                clearInterval(myApp.intervalId);
+            } else if (myApp.poseIndex<myApp.poses.length) {
+                self.setTimer(myApp.poses, myApp.poses[myApp.poseIndex].timer - myApp.timerContainer.innerText);
+            };
+        });
+
+        //Skip button handling
+        self.skipButton.addEventListener("click", function(){
+            clearInterval(myApp.intervalId);
+            myApp.poseIndex++;
+            if (myApp.poseIndex<myApp.poses.length) {
+                myApp.paused = false;
+                self.setTimer(myApp.poses, 0);
+            } else {
+                myApp.timerContainer.innerText = 0;
+                myApp.loadPage('templates/done.html', myApp.appContainer, function(){});
+            };
+        });
+    }
+};
 
 
-//Init logic for home template
-function initHomeTemplate(){
-    var startButton = document.getElementById('startButton');
-    startButton.addEventListener("click", function(){
-        loadPage('templates/workout.html', containerEl, initWorkoutTemplate);
-    });
-}
-
-//Init logic for workout template
-function initWorkoutTemplate(){
-    var pauseButton = document.getElementById('pause');
-    var skipButton = document.getElementById('skip');
-    var workoutEl = document.getElementById('workout');
-    timerEl = document.getElementById('timer');
-    setTimer(poses, workoutEl, timerEl, 0);
-
-    //Pause button handling
-    pauseButton.addEventListener("click", function(){
-        paused = !paused;
-        if (paused) {
-            clearInterval(intervalId);
-        } else if (poseIndex<poses.length) {
-            setTimer(poses, workoutEl, timerEl, poses[poseIndex].timer - timerEl.innerText);
-        };
-    });
-
-    //Skip button handling
-    skipButton.addEventListener("click", function(){
-        clearInterval(intervalId);
-        poseIndex++;
-        if (poseIndex<poses.length) {
-            setTimer(poses, workoutEl, timerEl, 0);
-        } else {
-            timerEl.innerText = 0;
-            loadPage('templates/done.html', containerEl, function(){});
-        };
-    });
-}
+myApp.loadPage('templates/home.html', myApp.appContainer, homeScreen.initHomeTemplate, homeScreen);
